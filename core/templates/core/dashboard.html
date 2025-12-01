@@ -1,0 +1,136 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2>Dashboard <small class="text-muted fs-6">{{ today|date:"l, d F Y" }}</small></h2>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Card Total Petugas -->
+    <div class="col-md-3">
+        <a href="{% url 'web-petugas-list' %}" class="text-decoration-none">
+            <div class="card bg-primary text-white h-100 shadow-sm hover-shadow">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Petugas</h5>
+                    <h2 class="display-4 fw-bold">{{ total_petugas }}</h2>
+                    <small>Klik untuk lihat detail</small>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Card Hadir Hari Ini -->
+    <div class="col-md-3">
+        <a href="{% url 'web-presensi-list' %}?date={{ today|date:'Y-m-d' }}" class="text-decoration-none">
+            <div class="card bg-success text-white h-100 shadow-sm hover-shadow">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Hadir Hari Ini</h5>
+                    <h2 class="display-4 fw-bold">{{ hadir_today }}</h2>
+                    <small>Klik untuk lihat detail</small>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Card Belum Hadir -->
+    <div class="col-md-3">
+        <a href="{% url 'web-rekap-harian' %}?date={{ today|date:'Y-m-d' }}" class="text-decoration-none">
+            <div class="card bg-warning text-dark h-100 shadow-sm hover-shadow">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Belum Hadir</h5>
+                    <h2 class="display-4 fw-bold">{{ belum_hadir }}</h2>
+                    <small>Klik untuk rekap harian</small>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Card Laporan Masuk -->
+    <div class="col-md-3">
+        <a href="{% url 'web-laporan-list' %}?date={{ today|date:'Y-m-d' }}" class="text-decoration-none">
+            <div class="card bg-danger text-white h-100 shadow-sm hover-shadow">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Laporan Baru</h5>
+                    <h2 class="display-4 fw-bold">{{ laporan_baru }}</h2>
+                    <small>Klik untuk lihat laporan</small>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Grafik atau Tabel Ringkas -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+                <span>Aktivitas Terkini (Presensi)</span>
+                <a href="{% url 'web-presensi-list' %}" class="btn btn-sm btn-link text-decoration-none">Lihat Semua</a>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for p in recent_presensi %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <!-- Format Baru: Nama Lengkap (Fallback ke Email jika kosong) -->
+                        <strong>
+                            {% if p.petugas.first_name or p.petugas.last_name %}
+                                {{ p.petugas.first_name }} {{ p.petugas.last_name }}
+                            {% else %}
+                                {{ p.petugas.email }}
+                            {% endif %}
+                        </strong>
+                        <br>
+                        <!-- Format Baru: Tanggal Lengkap - Lokasi -->
+                        <small class="text-muted">{{ p.timestamp|date:"d F Y" }} - {{ p.location_note|default:"Lokasi tidak terdeteksi"|truncatechars:30 }}</small>
+                    </div>
+                    <a href="{% url 'web-presensi-detail' p.id %}" class="btn btn-sm btn-outline-secondary">Detail</a>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted text-center">Belum ada presensi hari ini.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+                <span>Laporan Insiden (Status: LAPOR)</span>
+                <a href="{% url 'web-laporan-list' %}?status=lapor" class="btn btn-sm btn-link text-decoration-none">Lihat Semua</a>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for l in open_laporan %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-danger">{{ l.status|upper }}</span>
+                        <strong>
+                            {% if l.petugas.first_name or l.petugas.last_name %}
+                                {{ l.petugas.first_name }} {{ l.petugas.last_name }}
+                            {% else %}
+                                {{ l.petugas.email }}
+                            {% endif %}
+                        </strong>
+                        <br>
+                        <small>{{ l.note|truncatechars:40 }}</small>
+                    </div>
+                    <a href="{% url 'web-laporan-detail' l.id %}" class="btn btn-sm btn-outline-primary">Lihat</a>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted text-center">Tidak ada laporan status LAPOR.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-shadow:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+        transition: all .2s ease-in-out;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}

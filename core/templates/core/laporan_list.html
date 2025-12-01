@@ -1,0 +1,60 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Laporan Insiden</h2>
+    <!-- Filter Status -->
+    <div class="btn-group">
+        <a href="?status=all" class="btn btn-outline-secondary {% if not current_status or current_status == 'all' %}active{% endif %}">Semua</a>
+        <a href="?status=lapor" class="btn btn-outline-danger {% if current_status == 'lapor' %}active{% endif %}">Lapor</a>
+        <a href="?status=ditanggapi" class="btn btn-outline-warning {% if current_status == 'ditanggapi' %}active{% endif %}">Ditanggapi</a>
+        <a href="?status=selesai" class="btn btn-outline-success {% if current_status == 'selesai' %}active{% endif %}">Selesai</a>
+    </div>
+</div>
+
+<div class="row">
+    {% for item in laporan_list %}
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="row g-0 h-100">
+                <div class="col-md-4">
+                    {% if item.photo %}
+                    <img src="{{ item.photo.url }}" class="img-fluid rounded-start h-100 object-fit-cover" alt="Bukti" style="min-height: 150px; width: 100%;">
+                    {% else %}
+                    <div class="d-flex align-items-center justify-content-center bg-light h-100 text-muted">
+                        <i class="fas fa-image fa-2x"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-8">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <h5 class="card-title text-truncate">{{ item.note|default:"Laporan Tanpa Judul" }}</h5>
+                            <span class="badge 
+                                {% if item.status == 'lapor' %}bg-danger
+                                {% elif item.status == 'ditanggapi' %}bg-warning
+                                {% else %}bg-success{% endif %}">
+                                {{ item.status|upper }}
+                            </span>
+                        </div>
+                        <p class="card-text text-muted small mb-1">
+                            <i class="fas fa-user me-1"></i> {{ item.petugas.first_name }}
+                            <span class="mx-1">|</span>
+                            <i class="far fa-clock me-1"></i> {{ item.timestamp|date:"d M Y H:i" }}
+                        </p>
+                        <p class="card-text small">
+                            <i class="fas fa-map-marker-alt me-1 text-danger"></i> {{ item.location_note|default:"Lokasi tidak ada catatan" }}
+                        </p>
+                        <a href="{% url 'web-laporan-detail' item.id %}" class="btn btn-sm btn-primary stretched-link">Lihat Detail</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5 text-muted">
+        <h4>Tidak ada laporan ditemukan.</h4>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

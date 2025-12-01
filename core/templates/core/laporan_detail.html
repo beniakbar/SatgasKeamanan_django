@@ -1,0 +1,72 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                <h4 class="mb-0">Detail Laporan #{{ laporan.id }}</h4>
+                <a href="{% url 'web-laporan-list' %}" class="btn btn-outline-secondary btn-sm">Kembali</a>
+            </div>
+            
+            {% if laporan.photo %}
+            <img src="{{ laporan.photo.url }}" class="card-img-top" alt="Bukti Laporan" style="max-height: 400px; object-fit: contain; background-color: #f0f0f0;">
+            {% endif %}
+
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-8">
+                        <h5>Keterangan:</h5>
+                        <p class="lead">{{ laporan.note }}</p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="mb-2">Status Saat Ini:</div>
+                        <span class="badge fs-6
+                            {% if laporan.status == 'lapor' %}bg-danger
+                            {% elif laporan.status == 'ditanggapi' %}bg-warning
+                            {% else %}bg-success{% endif %}">
+                            {{ laporan.status|upper }}
+                        </span>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Informasi Pelapor</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Nama:</strong> {{ laporan.petugas.first_name }} {{ laporan.petugas.last_name }}</li>
+                            <li><strong>Email:</strong> {{ laporan.petugas.email }}</li>
+                            <li><strong>Waktu:</strong> {{ laporan.timestamp|date:"d F Y, H:i" }} WIB</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Lokasi Kejadian</h6>
+                        <p class="mb-1">{{ laporan.location_note|default:"-" }}</p>
+                        <a href="https://www.google.com/maps?q={{ laporan.latitude }},{{ laporan.longitude }}" target="_blank" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-map-marker-alt me-1"></i> Buka di Google Maps
+                        </a>
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- Form Update Status -->
+                <div class="mt-4 p-3 bg-light rounded">
+                    <h5>Update Status Laporan</h5>
+                    <form method="post" class="d-flex align-items-center gap-3">
+                        {% csrf_token %}
+                        <select name="status" class="form-select w-auto">
+                            <option value="lapor" {% if laporan.status == 'lapor' %}selected{% endif %}>LAPOR (Baru)</option>
+                            <option value="ditanggapi" {% if laporan.status == 'ditanggapi' %}selected{% endif %}>DITANGGAPI (Sedang Diproses)</option>
+                            <option value="selesai" {% if laporan.status == 'selesai' %}selected{% endif %}>SELESAI (Ditutup)</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

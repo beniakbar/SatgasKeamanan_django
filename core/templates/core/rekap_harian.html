@@ -1,0 +1,79 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Rekap Kehadiran Harian</h2>
+    
+    <form method="get" class="d-flex">
+        <input type="date" name="date" class="form-control me-2" value="{{ selected_date|default:target_date|date:'Y-m-d' }}">
+        <button type="submit" class="btn btn-primary">Lihat</button>
+    </form>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5 class="card-title">Tanggal: {{ target_date|date:"l, d F Y" }}</h5>
+        <div class="table-responsive mt-3">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light text-center">
+                    <tr>
+                        <th>Nama Petugas</th>
+                        <th>Status Kehadiran</th>
+                        <th>Waktu Presensi</th>
+                        <th>Lokasi</th>
+                        <th>Detail</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in data_rekap %}
+                    <tr>
+                        <td>
+                            <strong>{{ item.full_name }}</strong><br>
+                            <small class="text-muted">{{ item.email }}</small>
+                        </td>
+                        <td class="text-center">
+                            {% if item.has_presensi_today %}
+                                {% if item.last_presensi.status_validasi == 'hadir' or not item.last_presensi.status_validasi %}
+                                    <span class="badge bg-success fs-6">HADIR</span>
+                                {% elif item.last_presensi.status_validasi == 'diluar_lokasi' %}
+                                    <span class="badge bg-warning text-dark fs-6">DILUAR LOKASI</span>
+                                {% else %}
+                                    <span class="badge bg-danger fs-6">TIDAK VALID</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-danger fs-6">BELUM HADIR</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if item.has_presensi_today %}
+                                {{ item.last_presensi.timestamp|slice:"11:16" }} WIB <!-- Ambil Jam Saja -->
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.has_presensi_today %}
+                                <small>{{ item.last_presensi.location_note|truncatechars:30 }}</small>
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if item.has_presensi_today %}
+                                <a href="{% url 'web-presensi-detail' item.last_presensi.id %}" class="btn btn-sm btn-outline-primary">Lihat</a>
+                            {% else %}
+                                <button class="btn btn-sm btn-secondary" disabled>Lihat</button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">Tidak ada data petugas.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

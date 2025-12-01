@@ -25,8 +25,8 @@ class UserManager(BaseUserManager):
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
-        extra_fields.setdefault("is_admin", True)        # OPTIONAL: jika admin app Anda pakai ini
-        extra_fields.setdefault("is_petugas", False)     # OPTIONAL
+        extra_fields.setdefault("is_admin", True)        
+        extra_fields.setdefault("is_petugas", False)     
 
         if extra_fields.get("is_staff") is not True:
             raise ValueError("Superuser harus memiliki is_staff=True.")
@@ -49,7 +49,7 @@ class User(AbstractUser):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
-    objects = UserManager()   # <--- Tambahkan ini
+    objects = UserManager()
 
     def __str__(self):
         return self.email
@@ -64,14 +64,24 @@ class Presensi(models.Model):
     note = models.TextField(help_text="Catatan harian dari petugas (e.g., 'Presensi Harian').")
     selfie_photo = models.ImageField(upload_to='presensi_photos/')
 
+    # Tambahan: Status Verifikasi Admin
+    STATUS_PRESENSI_CHOICES = [
+        ('hadir', 'Hadir'), # Default saat kirim
+        ('tidak_hadir', 'Tidak Hadir'), # Jika dibatalkan admin
+        ('diluar_lokasi', 'Kehadiran Diluar Lokasi'), # Jika lokasi tidak valid
+    ]
+    
+    status_validasi = models.CharField(
+        max_length=20, 
+        choices=STATUS_PRESENSI_CHOICES, 
+        default='hadir'
+    )
+
     class Meta:
-        # Menjamin hanya 1 presensi per petugas per hari
-        # unique_together = ('petugas', 'timestamp') # Ini harus diubah di level view/logic, bukan DB
-        # HAPUS BARIS DI ATAS, atau ganti dengan:
         pass
 
     def __str__(self):
-        return f"Presensi {self.petugas.first_name} pada {self.timestamp.date()}"
+        return f"Presensi {self.petugas.first_name} ({self.status_validasi})"
 
 
 class Laporan(models.Model):
@@ -83,19 +93,19 @@ class Laporan(models.Model):
     note = models.TextField(help_text="Detail laporan insiden/anomaly.")
     photo = models.ImageField(upload_to='laporan_photos/')
 
-    # Tambahan: Status dan Prioritas Laporan
     STATUS_CHOICES = [
-        ('open', 'Open'),
-        ('in_progress', 'In Progress'),
-        ('closed', 'Closed'),
+        ('lapor', 'Lapor'),
+        ('ditanggapi', 'Ditanggapi'),
+        ('selesai', 'Selesai'),
     ]
+    
     PRIORITY_CHOICES = [
         ('low', 'Low'),
         ('medium', 'Medium'),
         ('high', 'High'),
     ]
 
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='lapor')
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
 
     def __str__(self):

@@ -1,0 +1,71 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Data Presensi</h2>
+    
+    <!-- Filter Tanggal -->
+    <form method="get" class="d-flex">
+        <input type="date" name="date" class="form-control me-2" value="{{ selected_date }}">
+        <button type="submit" class="btn btn-primary">Filter</button>
+        {% if selected_date %}
+        <a href="{% url 'web-presensi-list' %}" class="btn btn-outline-secondary ms-2">Reset</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Waktu</th>
+                        <th>Petugas</th>
+                        <th>Status Validasi</th> <!-- Tambahan -->
+                        <th>Lokasi</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in presensi_list %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold">{{ item.timestamp|date:"d M Y" }}</div>
+                            <small class="text-muted">{{ item.timestamp|date:"H:i" }}</small>
+                        </td>
+                        <td>
+                            {{ item.petugas.first_name }} {{ item.petugas.last_name }}<br>
+                            <small class="text-muted">{{ item.petugas.email }}</small>
+                        </td>
+                        <td>
+                            {% if item.status_validasi == 'hadir' %}
+                                <span class="badge bg-success">HADIR</span>
+                            {% elif item.status_validasi == 'tidak_hadir' %}
+                                <span class="badge bg-danger">TIDAK HADIR</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">DILUAR LOKASI</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="d-block text-truncate" style="max-width: 200px;">
+                                <i class="fas fa-map-marker-alt text-danger"></i> {{ item.location_note|default:"-" }}
+                            </small>
+                        </td>
+                        <td>
+                            <a href="{% url 'web-presensi-detail' item.id %}" class="btn btn-sm btn-primary">
+                                Detail & Validasi
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">Tidak ada data presensi.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

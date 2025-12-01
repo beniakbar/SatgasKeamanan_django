@@ -11,16 +11,21 @@ from rest_framework_simplejwt.views import (
 )
 
 urlpatterns = [
+    # 1. Django Admin Default (Opsional)
     path('admin/', admin.site.urls),
 
-    # 1. JWT Authentication Endpoints
+    # 2. Web Admin Interface (Custom Dashboard)
+    # Ini diletakkan di root agar http://localhost:8000/ langsung masuk sini
+    path('', include('core.web_urls')),
+
+    # 3. JWT Authentication Endpoints (Untuk Android)
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
-    # 2. Aplikasi Core API
+    # 4. Aplikasi Core API (Untuk Android)
     path('api/', include('core.urls')),
 ]
 
-# ... Bagian media files (pastikan ini ada) ...
+# Konfigurasi Media Files (Foto Upload)
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

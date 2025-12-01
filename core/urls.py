@@ -1,15 +1,15 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import UserProfileView 
-from .views import RegisterUserView
-
 from .views import (
+    UserProfileView, 
+    RegisterUserView,
     PresensiViewSet,
     LaporanViewSet,
     PetugasViewSet,
     AdminPresensiViewSet,
     AdminLaporanViewSet,
     HarianPresensiReportView,
+    DashboardStatsAPIView # Import View Baru
 )
 
 router = DefaultRouter()
@@ -28,7 +28,12 @@ router.register(r'admin/laporan', AdminLaporanViewSet, basename='admin-laporan')
 
 
 urlpatterns = [
-    path('', include(router.urls)),
+    # Admin: Dashboard Stats (Untuk Mobile)
+    path(
+        'admin/dashboard/stats/',
+        DashboardStatsAPIView.as_view(),
+        name='api-dashboard-stats'
+    ),
 
     # Admin: laporan presensi harian
     path(
@@ -37,8 +42,10 @@ urlpatterns = [
         name='harian-presensi-report'
     ),
     
-    # PERBAIKAN KRITIS: Tambahkan 'user/' di sini agar cocok dengan permintaan klien Android
+    # User endpoints
     path('user/profile/', UserProfileView.as_view(), name='user-profile'), 
-
     path('user/register/', RegisterUserView.as_view(), name='user-register'),
+
+    # Router URLs (General patterns)
+    path('', include(router.urls)),
 ]
