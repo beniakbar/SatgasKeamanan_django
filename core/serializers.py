@@ -1,6 +1,6 @@
 # core/serializers.py
 from rest_framework import serializers
-from .models import User, Presensi, Laporan
+from .models import User, Presensi, Laporan, EmergencyAlarm
 from django.utils import timezone
 
 class UserSerializer(serializers.ModelSerializer):
@@ -121,6 +121,20 @@ class AdminLaporanSerializer(serializers.ModelSerializer):
             'status', 'priority'
         ]
         read_only_fields = ['status', 'priority']
+
+class EmergencyAlarmSerializer(serializers.ModelSerializer):
+    petugas_name = serializers.CharField(source='petugas.first_name', read_only=True)
+    
+    class Meta:
+        model = EmergencyAlarm
+        fields = [
+            'id', 'petugas', 'petugas_name', 'timestamp', 'category', 'description',
+            'latitude', 'longitude', 'status', 'resolved_at'
+        ]
+        read_only_fields = ['petugas', 'timestamp', 'status', 'resolved_at']
+        extra_kwargs = {
+            'description': {'required': False, 'allow_null': True, 'allow_blank': True},
+        }
 
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 

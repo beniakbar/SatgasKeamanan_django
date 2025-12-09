@@ -110,3 +110,35 @@ class Laporan(models.Model):
 
     def __str__(self):
         return f"Laporan {self.petugas.first_name} - {self.status}"
+
+
+class EmergencyAlarm(models.Model):
+    CATEGORY_CHOICES = [
+        ('maling', 'Maling'),
+        ('kebakaran', 'Kebakaran'),
+        ('bencana', 'Bencana Alam'),
+        ('keributan', 'Keributan/Tawuran'),
+        ('medis', 'Gawat Darurat Medis'),
+        ('lainnya', 'Lainnya'),
+    ]
+
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('handled', 'Handled/Resolved'),
+        ('false_alarm', 'False Alarm'),
+    ]
+
+    petugas = models.ForeignKey(User, on_delete=models.CASCADE, related_name='alarms_triggered')
+    timestamp = models.DateTimeField(auto_now_add=True)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    description = models.TextField(blank=True, null=True, help_text="Deskripsi tambahan jika kategori Lainnya")
+    
+    latitude = models.DecimalField(max_digits=9, decimal_places=6)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6)
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='alarms_resolved')
+
+    def __str__(self):
+        return f"ALARM: {self.category} by {self.petugas.first_name} at {self.timestamp}"

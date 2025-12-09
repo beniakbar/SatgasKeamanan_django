@@ -1,0 +1,50 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">Detail Alarm Darurat</h4>
+            </div>
+            <div class="card-body">
+                <p><strong>Kategori:</strong> <span class="badge bg-danger fs-6">{{ alarm.category|upper }}</span></p>
+                <p><strong>Status:</strong> <span class="badge 
+                    {% if alarm.status == 'active' %}bg-danger
+                    {% elif alarm.status == 'handled' %}bg-success
+                    {% else %}bg-warning{% endif %}">{{ alarm.status|upper }}</span></p>
+                <hr>
+                <p><strong>Waktu Picu:</strong> {{ alarm.timestamp|date:"d F Y, H:i:s" }}</p>
+                <p><strong>Dipicu Oleh:</strong> {{ alarm.petugas.first_name }} {{ alarm.petugas.last_name }} ({{ alarm.petugas.email }})</p>
+                <p><strong>Lokasi GPS:</strong> {{ alarm.latitude }}, {{ alarm.longitude }}</p>
+                <p><strong>Deskripsi:</strong></p>
+                <blockquote class="blockquote">
+                    <p class="mb-0 fst-italic">{{ alarm.description|default:"Tidak ada deskripsi tambahan." }}</p>
+                </blockquote>
+                <hr>
+                <p><strong>Waktu Ditangani:</strong> {{ alarm.resolved_at|date:"d F Y, H:i:s"|default:"-" }}</p>
+                <p><strong>Ditangani Oleh:</strong> {{ alarm.resolved_by.first_name|default:"-" }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header fw-bold">Tindakan Cepat</div>
+            <div class="card-body">
+                <p>Ubah status alarm:</p>
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <select name="status" class="form-select">
+                            <option value="active" {% if alarm.status == 'active' %}selected{% endif %}>Aktif</option>
+                            <option value="handled" {% if alarm.status == 'handled' %}selected{% endif %}>Selesai Ditangani</option>
+                            <option value="false_alarm" {% if alarm.status == 'false_alarm' %}selected{% endif %}>Alarm Palsu</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Update Status</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

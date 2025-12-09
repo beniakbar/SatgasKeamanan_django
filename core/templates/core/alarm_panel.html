@@ -1,0 +1,82 @@
+<div id="alarmToast" class="toast border-danger" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false" style="position: fixed; top: 1rem; right: 1rem; z-index: 1055;">
+    <div class="toast-header bg-danger text-white">
+        <strong class="me-auto"><i class="fas fa-exclamation-triangle me-2"></i>ALARM DARURAT AKTIF</strong>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+    <div class="toast-body">
+        <p id="toast-message" class="mb-2">Sebuah alarm darurat telah diaktifkan.</p>
+        <a href="{% url 'web-alarm-list' %}?status=active" class="btn btn-sm btn-danger">Buka Panel Monitoring Alarm</a>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const alarmToastEl = document.getElementById('alarmToast');
+    const alarmToast = new bootstrap.Toast(alarmToastEl, { autohide: false });
+    const toastMessage = document.getElementById('toast-message');
+    let currentAlarmId = null;
+    let audioCtx;
+    let sirenSound;
+
+    // Fungsi untuk memainkan suara (membutuhkan interaksi pengguna pertama kali)
+    function playSiren() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        if (!sirenSound || sirenSound.ended) {
+            fetch('/static/sounds/siren.mp3') // Asumsi path ke suara sirine
+                .then(response => response.arrayBuffer())
+                .then(arrayBuffer => audioCtx.decodeAudioData(arrayBuffer))
+                .then(audioBuffer => {
+                    sirenSound = audioCtx.createBufferSource();
+                    sirenSound.buffer = audioBuffer;
+                    sirenSound.loop = true;
+                    sirenSound.connect(audioCtx.destination);
+                    sirenSound.start(0);
+                });
+        }
+    }
+
+    function stopSiren() {
+        if (sirenSound) {
+            sirenSound.stop();
+            sirenSound = null;
+        }
+    }
+
+    function checkAlarms() {
+        fetch('/api/alarm/?status=active')
+            .then(response => response.json())
+            .then(data => {
+                if (data.length > 0) {
+                    const latest = data[0];
+                    toastMessage.innerHTML = `<strong>${latest.category.toUpperCase()}</strong> oleh <strong>${latest.petugas_name}</strong>`;
+
+                    if (currentAlarmId !== latest.id) {
+                        currentAlarmId = latest.id;
+                        alarmToast.show();
+                        // Coba mainkan suara (mungkin diblok browser)
+                        playSiren(); 
+                    }
+                } else {
+                    if (currentAlarmId !== null) {
+                        currentAlarmId = null;
+                        alarmToast.hide();
+                        stopSiren();
+                    }
+                }
+            })
+            .catch(err => {
+                console.error('Gagal fetch alarm:', err);
+            });
+    }
+
+    // Event listener untuk tombol close toast, untuk menghentikan suara
+    alarmToastEl.addEventListener('hidden.bs.toast', stopSiren);
+
+    // Memulai polling
+    setInterval(checkAlarms, 5000); // Cek setiap 5 detik
+    checkAlarms(); // Cek langsung saat halaman dimuat
+});
+</script>

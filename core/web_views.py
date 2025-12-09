@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.contrib.auth import logout # Import Logout
-from .models import User, Presensi, Laporan
+from .models import User, Presensi, Laporan, EmergencyAlarm
 from .serializers import PetugasStatusPresensiSerializer 
 
 # --- VIEW KHUSUS LOGOUT (GET Support) ---
@@ -158,3 +158,47 @@ class WebLaporanDetailView(LoginRequiredMixin, AdminRequiredMixin, DetailView):
             messages.success(request, f"Status laporan berhasil diubah menjadi {new_status.upper()}")
         
         return redirect('web-laporan-detail', pk=laporan.id)
+
+class WebAlarmListView(LoginRequiredMixin, AdminRequiredMixin, ListView):
+    model = EmergencyAlarm
+    template_name = 'core/alarm_list.html'
+    context_object_name = 'alarm_list'
+    paginate_by = 15
+
+    def get_queryset(self):
+        queryset = EmergencyAlarm.objects.select_related('petugas').order_by('-timestamp')
+        
+        status = self.request.GET.get('status')
+        if status and status != 'all':
+            queryset = queryset.filter(status=status)
+        
+        date_str = self.request.GET.get('date')
+        if date_str:
+            queryset = queryset.filter(timestamp__date=date_str)
+            
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['current_status'] = self.request.GET.get('status', 'all')
+        context['selected_date'] = self.request.GET.get('date', '')
+        return context
+
+class WebAlarmDetailView(LoginRequiredMixin, AdminRequiredMixin, DetailView):
+    model = EmergencyAlarm
+    template_name = 'core/alarm_detail.html'
+    context_object_name = 'alarm'
+
+    def post(self, request, *args, **kwargs):
+        alarm = self.get_object()
+        new_status = request.POST.get('status')
+        
+        if new_status in ['active', 'handled', 'false_alarm']:
+            alarm.status = new_status
+            if new_status != 'active':
+                alarm.resolved_at = timezone.now()
+                alarm.resolved_by = request.user
+            alarm.save()
+            messages.success(request, f"Status alarm berhasil diubah menjadi {new_status.upper()}")
+        
+        return redirect('web-alarm-detail', pk=alarm.id)

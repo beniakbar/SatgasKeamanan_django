@@ -1,0 +1,51 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Riwayat Alarm Darurat</h2>
+    <!-- Filter Status -->
+    <div class="btn-group">
+        <a href="?status=all" class="btn btn-outline-secondary {% if not current_status or current_status == 'all' %}active{% endif %}">Semua</a>
+        <a href="?status=active" class="btn btn-outline-danger {% if current_status == 'active' %}active{% endif %}">Aktif</a>
+        <a href="?status=handled" class="btn btn-outline-success {% if current_status == 'handled' %}active{% endif %}">Selesai</a>
+        <a href="?status=false_alarm" class="btn btn-outline-warning {% if current_status == 'false_alarm' %}active{% endif %}">Alarm Palsu</a>
+    </div>
+</div>
+
+<div class="row">
+    {% for alarm in alarm_list %}
+    <div class="col-md-6 mb-3">
+        <div class="card h-100 border-start 
+            {% if alarm.status == 'active' %}border-danger border-4
+            {% elif alarm.status == 'handled' %}border-success
+            {% else %}border-secondary{% endif %}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <h5 class="card-title text-danger">{{ alarm.category|upper }}</h5>
+                    <span class="badge 
+                        {% if alarm.status == 'active' %}bg-danger
+                        {% elif alarm.status == 'handled' %}bg-success
+                        {% else %}bg-warning{% endif %}">
+                        {{ alarm.status|upper }}
+                    </span>
+                </div>
+                <p class="card-text text-muted small mb-1">
+                    <i class="fas fa-user me-1"></i> {{ alarm.petugas.first_name }}
+                    <span class="mx-1">|</span>
+                    <i class="far fa-clock me-1"></i> {{ alarm.timestamp|date:"d M Y H:i" }}
+                </p>
+                <p class="card-text small">
+                    <i class="fas fa-map-marker-alt me-1 text-danger"></i> Lat: {{ alarm.latitude }}, Lon: {{ alarm.longitude }}
+                </p>
+                <p class="card-text small fst-italic">"{{ alarm.description|default:"Tidak ada deskripsi tambahan." }}"</p>
+                <a href="{% url 'web-alarm-detail' alarm.id %}" class="btn btn-sm btn-outline-primary stretched-link">Lihat Detail & Tangani</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5 text-muted">
+        <h4>Tidak ada riwayat alarm ditemukan.</h4>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

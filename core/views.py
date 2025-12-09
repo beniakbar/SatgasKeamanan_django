@@ -10,9 +10,10 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 from django.utils import timezone
+from datetime import timedelta
 from django.utils.dateparse import parse_date
 
-from .models import User, Presensi, Laporan
+from .models import User, Presensi, Laporan, EmergencyAlarm
 from .serializers import (
     PetugasDetailSerializer,
     AdminPresensiSerializer,
@@ -22,7 +23,8 @@ from .serializers import (
     EmailTokenObtainPairSerializer,
     UserSerializer,
     PetugasStatusPresensiSerializer,
-    UpdateProfileSerializer # Import Serializer Baru
+    UpdateProfileSerializer,
+    EmergencyAlarmSerializer
 )
 
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -35,7 +37,18 @@ class RegisterUserView(APIView):
         email = request.data.get("email")
         password = request.data.get("password")
         phone_number = request.data.get("phone_number")
-        name = request.data.get("name") 
+        
+        # Update: Ambil first_name dan last_name langsung
+        first_name = request.data.get("first_name", "")
+        last_name = request.data.get("last_name", "")
+        
+        # Fallback jika client masih mengirim 'name' (opsional, untuk kompatibilitas)
+        if not first_name and request.data.get("name"):
+            name = request.data.get("name")
+            parts = name.strip().split(" ", 1)
+            first_name = parts[0]
+            if len(parts) > 1:
+                last_name = parts[1]
 
         if not email or not password:
             return Response({"error": "Email dan password wajib diisi."},
@@ -44,14 +57,6 @@ class RegisterUserView(APIView):
         if User.objects.filter(email=email).exists():
             return Response({"error": "Email sudah terdaftar."},
                             status=status.HTTP_400_BAD_REQUEST)
-
-        first_name = ""
-        last_name = ""
-        if name:
-            parts = name.strip().split(" ", 1)
-            first_name = parts[0]
-            if len(parts) > 1:
-                last_name = parts[1]
 
         user = User.objects.create_user(
             email=email,
@@ -103,6 +108,9 @@ class DashboardStatsAPIView(APIView):
 
         open_laporan_qs = Laporan.objects.select_related('petugas').filter(status='lapor').order_by('-timestamp')[:5]
         open_laporan_data = AdminLaporanSerializer(open_laporan_qs, many=True, context={'request': request}).data
+        
+        # Tambahan: Jumlah alarm aktif
+        active_alarms = EmergencyAlarm.objects.filter(status='active').count()
 
         return Response({
             'total_petugas': total_petugas,
@@ -110,7 +118,8 @@ class DashboardStatsAPIView(APIView):
             'belum_hadir': belum_hadir,
             'laporan_baru': laporan_baru,
             'recent_presensi': recent_presensi_data,
-            'open_laporan': open_laporan_data
+            'open_laporan': open_laporan_data,
+            'active_alarms': active_alarms 
         })
 
 # ============================================
@@ -224,6 +233,40 @@ class LaporanViewSet(viewsets.ModelViewSet):
             raise permissions.exceptions.PermissionDenied("Hanya Petugas yang dapat membuat laporan.")
 
         serializer.save(petugas=self.request.user)
+
+# ============================================
+# 4. EMERGENCY ALARM VIEWSET
+# ============================================
+class EmergencyAlarmViewSet(viewsets.ModelViewSet):
+    serializer_class = EmergencyAlarmSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Allow filtering by status
+        queryset = EmergencyAlarm.objects.all().order_by('-timestamp')
+        status_param = self.request.query_params.get('status')
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+        return queryset
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        
+        # 1. Cooldown Check (3 menit)
+        three_minutes_ago = timezone.now() - timedelta(minutes=3)
+        recent_alarm = EmergencyAlarm.objects.filter(
+            petugas=user, 
+            timestamp__gte=three_minutes_ago
+        ).first()
+
+        if recent_alarm:
+             raise serializers.ValidationError({"detail": "Mohon tunggu 3 menit sebelum memicu alarm lagi."})
+
+        # 2. Save Alarm
+        serializer.save(petugas=user)
+        
+        # 3. TODO: Trigger Push Notification (FCM) logic here
+        # Untuk simulasi, kita anggap notifikasi dikirim oleh client/server trigger
 
 
 class EmailTokenObtainPairView(TokenObtainPairView):

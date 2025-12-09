@@ -9,7 +9,9 @@ from .web_views import (
     WebPresensiDetailView,
     WebLaporanListView,
     WebLaporanDetailView,
-    logout_view # Import fungsi logout custom
+    WebAlarmListView,
+    WebAlarmDetailView,
+    logout_view
 )
 
 urlpatterns = [
@@ -29,6 +31,10 @@ urlpatterns = [
     path('dashboard/laporan/', WebLaporanListView.as_view(), name='web-laporan-list'),
     path('dashboard/laporan/<int:pk>/', WebLaporanDetailView.as_view(), name='web-laporan-detail'),
     
+    # Alarm
+    path('dashboard/alarm/', WebAlarmListView.as_view(), name='web-alarm-list'),
+    path('dashboard/alarm/<int:pk>/', WebAlarmDetailView.as_view(), name='web-alarm-detail'),
+
     # Authentication
     path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
     

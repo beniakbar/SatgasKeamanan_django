@@ -9,7 +9,8 @@ from .views import (
     AdminPresensiViewSet,
     AdminLaporanViewSet,
     HarianPresensiReportView,
-    DashboardStatsAPIView # Import View Baru
+    DashboardStatsAPIView,
+    EmergencyAlarmViewSet # Import Baru
 )
 
 router = DefaultRouter()
@@ -17,6 +18,7 @@ router = DefaultRouter()
 # Endpoint Petugas (Presensi & Laporan)
 router.register(r'presensi', PresensiViewSet, basename='presensi')
 router.register(r'laporan', LaporanViewSet, basename='laporan')
+router.register(r'alarm', EmergencyAlarmViewSet, basename='alarm') # Endpoint Alarm
 
 
 # Endpoint Admin → Data Petugas
